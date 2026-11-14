@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build dropbear + dropbearkey + scp untuk Android arm64 (dynamic, link ke bionic) pakai NDK.
-# Hasil: module/bin/{dropbear,dropbearkey,scp}
+# Hasil: module/{dropbear,dropbearkey,scp}
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -19,7 +19,7 @@ cd "$WORK/dropbear-${VER}"
 
 cat > localoptions.h <<'EOF'
 #undef DEFAULT_PATH
-#define DEFAULT_PATH "/system/bin:/system/xbin:/vendor/bin:/data/adb/modules/sshvpn/bin:/data/adb/magisk:/data/adb/ksu/bin:/data/adb/ap/bin"
+#define DEFAULT_PATH "/system/bin:/system/xbin:/vendor/bin:/data/adb/modules/sshvpn:/data/adb/magisk:/data/adb/ksu/bin:/data/adb/ap/bin"
 EOF
 
 export CC="$TC/aarch64-linux-android${API}-clang"
@@ -30,9 +30,9 @@ export AR="$TC/llvm-ar" RANLIB="$TC/llvm-ranlib" STRIP="$TC/llvm-strip"
   --disable-lastlog --disable-loginfunc --disable-pututline --disable-pututxline
 make -j"$(nproc)" PROGRAMS="dropbear dropbearkey scp"
 
-mkdir -p "$ROOT/module/bin"
+
 for b in dropbear dropbearkey scp; do
   "$STRIP" "$b"
-  install -m 0755 "$b" "$ROOT/module/bin/$b"
+  install -m 0755 "$b" "$ROOT/module/$b"
 done
-ls -l "$ROOT/module/bin"
+ls -l "$ROOT/module"

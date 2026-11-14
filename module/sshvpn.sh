@@ -13,7 +13,7 @@ BOUND=$DATA/bound
 STOPPED=$DATA/stopped
 STAMP=$DATA/fw.stamp
 LOG=$DATA/sshvpn.log
-BIN=$MODDIR/bin
+BIN=$MODDIR
 CHAIN=SSHVPN
 export PATH="$BIN:$PATH"
 

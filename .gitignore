@@ -1,3 +1,4 @@
 dist/
-module/bin/*
-!module/bin/.gitkeep
+module/dropbear
+module/dropbearkey
+module/scp
