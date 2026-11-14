@@ -1,0 +1,3 @@
+dist/
+module/bin/*
+!module/bin/.gitkeep

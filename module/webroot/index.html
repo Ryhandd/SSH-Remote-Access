@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SSH Remote</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#262d36;--text:#e6edf3;--mute:#929bb0;--acc:#3fb9a6;--ink:#04201b;--bad:#f0616d;--ok:#3fb950;--r:14px;color-scheme:dark light}
+@media (prefers-color-scheme:light){:root{--bg:#f4f6f8;--card:#fff;--line:#dde2e8;--text:#14181d;--mute:#566070;--acc:#0e8f7c;--ink:#fff;--bad:#c72f3d;--ok:#1a7f37}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 48px;display:grid;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px}
+h1{font-size:1.25rem;margin:0;letter-spacing:-.01em}
+h2{font-size:.78rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:.85rem;font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
+.pill.on .dot{background:var(--ok)}.pill.off .dot{background:var(--bad)}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:.92rem}
+dt{color:var(--mute)}dd{margin:0;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+button{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer;transition:transform .15s,background .15s}
+button:hover{background:rgba(127,127,127,.12)}button:active{transform:scale(.97)}
+button.p{background:var(--acc);color:var(--ink);border-color:transparent}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,code:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+label{display:block;font-size:.85rem;color:var(--mute);margin:12px 0 4px}
+input,select,textarea{width:100%;min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem}
+textarea{min-height:120px;resize:vertical}
+code.cmd{display:block;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88rem;word-break:break-all;cursor:pointer}
+pre{margin:0;max-height:240px;overflow:auto;font-size:.75rem;line-height:1.45;white-space:pre-wrap;word-break:break-all;color:var(--mute)}
+.hint{font-size:.8rem;color:var(--mute);margin:6px 0 0}
+#banner{display:none;border-color:var(--bad);color:var(--bad)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90vw}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header><h1>SSH Remote Access</h1><span id="pill" class="pill off"><span class="dot"></span><span id="pillt">...</span></span></header>
+
+  <div id="banner" class="card">Buka halaman ini lewat WebUI KernelSU / KernelSU Next / APatch atau MMRL. API ksu tidak ditemukan.</div>
+
+  <section class="card">
+    <h2>Status</h2>
+    <dl>
+      <dt>Port</dt><dd id="s-port">-</dd>
+      <dt>Bind</dt><dd id="s-bound">-</dd>
+      <dt>Interface</dt><dd id="s-up">-</dd>
+      <dt>Public key</dt><dd id="s-keys">-</dd>
+      <dt>Host key</dt><dd id="s-fp">-</dd>
+    </dl>
+    <div class="row" style="margin-top:14px">
+      <button class="p" id="b-start">Start</button>
+      <button id="b-restart">Restart</button>
+      <button id="b-stop">Stop</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Connect</h2>
+    <code class="cmd" id="cmd" tabindex="0" role="button" aria-label="Salin perintah ssh">-</code>
+    <p class="hint">Ketuk untuk menyalin. File via scp pakai <b>scp -O</b>.</p>
+  </section>
+
+  <section class="card">
+    <h2>Authorized keys</h2>
+    <textarea id="keys" spellcheck="false" placeholder="ssh-ed25519 AAAA... laptop"></textarea>
+    <p class="hint">Satu public key per baris, tanpa opsi di depan. Password login dimatikan.</p>
+    <div class="row" style="margin-top:10px"><button class="p" id="b-keys">Simpan keys</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Pengaturan</h2>
+    <label for="c-port">Port (1024-65535)</label><input id="c-port" inputmode="numeric">
+    <label for="c-ifaces">Interface VPN (pisah spasi)</label><input id="c-ifaces" autocapitalize="none" spellcheck="false">
+    <label for="c-bind">Mode bind</label>
+    <select id="c-bind"><option value="iface">Hanya IP interface VPN (aman)</option><option value="all">Semua alamat, dibatasi iptables</option></select>
+    <label for="c-idle">Idle timeout (detik, 0 = mati)</label><input id="c-idle" inputmode="numeric">
+    <label for="c-fwd">Port forwarding</label>
+    <select id="c-fwd"><option value="0">Nonaktif</option><option value="1">Aktif</option></select>
+    <div class="row" style="margin-top:14px"><button class="p" id="b-conf">Simpan dan restart</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Log</h2>
+    <pre id="log">-</pre>
+    <div class="row" style="margin-top:10px"><button id="b-log">Muat ulang</button></div>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+<script>
+const MOD="/data/adb/modules/sshvpn/sshvpn.sh";
+const $=id=>document.getElementById(id);
+const q=s=>"'"+String(s).replace(/'/g,"'\\''")+"'";
+function exec(cmd){
+  return new Promise(res=>{
+    const cb="cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+    window[cb]=(errno,stdout,stderr)=>{delete window[cb];res({errno,stdout:stdout||"",stderr:stderr||""})};
+    try{ksu.exec(cmd,"{}",cb)}catch(e){delete window[cb];res({errno:-1,stdout:"",stderr:String(e)})}
+  });
+}
+const run=a=>exec("sh "+MOD+" "+a);
+let tt;
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2400)}
+function parse(o){const r={};o.split("\n").forEach(l=>{const i=l.indexOf("=");if(i>0)r[l.slice(0,i)]=l.slice(i+1).trim()});return r}
+let formLoaded=false;
+async function refresh(){
+  const r=await run("status"); if(r.errno!==0&&!r.stdout)return;
+  const s=parse(r.stdout), on=s.running==="1";
+  $("pill").className="pill "+(on?"on":"off");
+  $("pillt").textContent=on?"Berjalan":(s.stopped==="1"?"Dihentikan":"Menunggu VPN");
+  $("s-port").textContent=s.port||"-";
+  $("s-bound").textContent=s.bound||"-";
+  $("s-up").textContent=s.up||"tidak ada yang aktif";
+  $("s-keys").textContent=(s.keys||"0")+" key";
+  $("s-fp").textContent=s.fp||"belum dibuat (muncul saat pertama start)";
+  let ip="<ip-vpn>";
+  if(s.bound&&s.bound!=="all")ip=s.bound.split(/\s+/)[0];
+  else if(s.up){const f=s.up.split(" ")[0].split("=");if(f[1])ip=f[1]}
+  $("cmd").textContent="ssh root@"+ip+" -p "+(s.port||"2222");
+  if(!formLoaded){
+    $("c-port").value=s.port||"";$("c-ifaces").value=s.ifaces||"";$("c-bind").value=s.bind||"iface";
+    $("c-idle").value=s.idle||"";$("c-fwd").value=s.fwd||"0";formLoaded=true;
+  }
+}
+async function loadKeys(){const r=await run("keys-get");$("keys").value=r.stdout}
+async function loadLog(){const r=await run("log");$("log").textContent=r.stdout.trim()||"(kosong)"}
+async function act(a,msg){const r=await run(a);toast(r.stdout.trim()||msg);await refresh();loadLog()}
+$("b-start").onclick=()=>act("start","Start diminta");
+$("b-restart").onclick=()=>act("restart","Restart diminta");
+$("b-stop").onclick=()=>act("stop","Dihentikan");
+$("b-log").onclick=loadLog;
+$("b-keys").onclick=async()=>{
+  const b=btoa(unescape(encodeURIComponent($("keys").value)));
+  const r=await run("keys-set "+q(b));toast(r.stdout.trim()||"Gagal");
+  if(r.stdout.trim()==="ok"){await run("restart");refresh();loadLog()}
+};
+$("b-conf").onclick=async()=>{
+  const kv=[["PORT",$("c-port").value.trim()],["IFACES",$("c-ifaces").value.trim()],["BIND",$("c-bind").value],["IDLE",$("c-idle").value.trim()],["ALLOW_FWD",$("c-fwd").value]];
+  for(const [k,v] of kv){
+    const r=await run("conf-set "+k+" "+q(v));
+    if(r.stdout.trim()!=="ok"){toast(r.stdout.trim()||("Gagal: "+k));return}
+  }
+  await run("restart");toast("Tersimpan");formLoaded=false;refresh();loadLog();
+};
+$("cmd").onclick=async()=>{
+  const t=$("cmd").textContent;
+  try{await navigator.clipboard.writeText(t);toast("Disalin")}catch(e){
+    const sel=getSelection(),rg=document.createRange();rg.selectNodeContents($("cmd"));sel.removeAllRanges();sel.addRange(rg);toast("Teks dipilih, salin manual")}
+};
+$("cmd").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("cmd").click()}};
+if(typeof ksu==="undefined"){$("banner").style.display="block"}
+else{refresh();loadKeys();loadLog();setInterval(()=>{if(!document.hidden)refresh()},5000)}
+</script>
+</body>
+</html>

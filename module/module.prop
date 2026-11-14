@@ -1,0 +1,7 @@
+id=sshvpn
+name=SSH Remote Access (VPN-only)
+version=v0.1.0
+versionCode=1
+author=Ryhandd
+description=Dropbear SSH root key-only, hanya bisa diakses lewat interface VPN (Tailscale/WireGuard). Ada WebUI dan firewall iptables.
+updateJson=https://raw.githubusercontent.com/__REPO__/main/update.json

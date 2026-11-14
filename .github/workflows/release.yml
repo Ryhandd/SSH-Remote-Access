@@ -1,0 +1,76 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dropbear_version:
+        description: "Versi dropbear (tanpa prefix)"
+        required: false
+        default: "2025.88"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DROPBEAR_VERSION: ${{ inputs.dropbear_version || '2025.88' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Version
+        id: v
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then TAG="$GITHUB_REF_NAME"; else TAG="v0.0.0-dev"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "code=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Lint
+        run: |
+          for f in module/*.sh scripts/*.sh; do bash -n "$f"; done
+          sed -n '/<script>/,/<\/script>/p' module/webroot/index.html | sed '1d;$d' > /tmp/ui.js
+          node --check /tmp/ui.js
+
+      - name: Build dropbear (arm64)
+        run: bash scripts/build-dropbear.sh
+
+      - name: Package
+        run: bash scripts/package.sh "${{ steps.v.outputs.tag }}" "${{ steps.v.outputs.code }}" "$GITHUB_REPOSITORY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sshvpn-${{ steps.v.outputs.tag }}
+          path: dist/*.zip
+
+      - name: Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          body_path: CHANGELOG.md
+
+      - name: Update update.json
+        if: github.ref_type == 'tag'
+        run: |
+          TAG="${{ steps.v.outputs.tag }}"
+          cat > /tmp/update.json <<EOF
+          {
+            "version": "$TAG",
+            "versionCode": ${{ steps.v.outputs.code }},
+            "zipUrl": "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/sshvpn-$TAG.zip",
+            "changelog": "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/CHANGELOG.md"
+          }
+          EOF
+          sed -i 's/^          //' /tmp/update.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          cp /tmp/update.json update.json
+          git add update.json
+          git diff --cached --quiet || { git commit -m "chore: update.json $TAG"; git push origin main; }
