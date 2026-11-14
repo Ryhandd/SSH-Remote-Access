@@ -4,7 +4,7 @@ Modul Magisk / KernelSU / KernelSU Next / APatch (arm64). Dropbear SSH sebagai r
 
 ## Pasang
 1. Pasang app Tailscale atau WireGuard di HP, connect.
-2. Ambil zip dari Releases, flash lewat root manager.
+2. Di Releases, download file **`SSH-Remote-Access-vX.Y.Z.zip`** di bagian Assets, lalu flash lewat root manager. Jangan pakai "Source code (zip)": itu isi repo dengan folder pembungkus, bukan modul.
 3. Taruh public key di `/sdcard/sshvpn_authorized_keys` sebelum flash, atau isi lewat WebUI.
 4. Reboot. Login: `ssh root@<ip-vpn> -p 2222`. File: `scp -O` (dropbear tidak punya sftp-server).
 

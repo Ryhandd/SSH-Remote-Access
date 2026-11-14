@@ -43,8 +43,9 @@ jobs:
         run: bash scripts/package.sh "${{ steps.v.outputs.tag }}" "${{ steps.v.outputs.code }}" "$GITHUB_REPOSITORY"
 
       - uses: actions/upload-artifact@v4
+        if: github.ref_type != 'tag'
         with:
-          name: sshvpn-${{ steps.v.outputs.tag }}
+          name: SSH-Remote-Access-${{ steps.v.outputs.tag }}
           path: dist/*.zip
 
       - name: Release
@@ -62,7 +63,7 @@ jobs:
           {
             "version": "$TAG",
             "versionCode": ${{ steps.v.outputs.code }},
-            "zipUrl": "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/sshvpn-$TAG.zip",
+            "zipUrl": "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/SSH-Remote-Access-$TAG.zip",
             "changelog": "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/CHANGELOG.md"
           }
           EOF

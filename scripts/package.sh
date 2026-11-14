@@ -15,7 +15,14 @@ sed -i -e "s|^version=.*|version=${TAG}|" \
        -e "s|^versionCode=.*|versionCode=${CODE}|" \
        -e "s|__REPO__|${REPO}|" "$STAGE/module.prop"
 
+ZIP="$OUT/SSH-Remote-Access-${TAG}.zip"
 mkdir -p "$OUT"
-rm -f "$OUT/sshvpn-${TAG}.zip"
-(cd "$STAGE" && zip -r9q "$OUT/sshvpn-${TAG}.zip" .)
-echo "$OUT/sshvpn-${TAG}.zip"
+rm -f "$ZIP"
+(cd "$STAGE" && zip -r9qX "$ZIP" .)
+
+# Guard: module.prop dan customize.sh HARUS ada di root zip (tanpa folder pembungkus)
+LIST="$(unzip -Z1 "$ZIP")"
+for f in module.prop customize.sh service.sh bin/dropbear; do
+  echo "$LIST" | grep -qx "$f" || { echo "zip salah: $f tidak ada di root" >&2; exit 1; }
+done
+echo "$ZIP"
