@@ -8,11 +8,15 @@ Login **hanya pakai key** (password dimatikan). Cocok untuk akses HP dari laptop
 
 ## ⬇️ Yang harus diunduh
 
-Buka **[Releases](../../releases/latest)** → pada rilis terbaru, bagian **Assets** → unduh file:
+**Unduh langsung:** https://github.com/Ryhandd/SSH-Remote-Access/releases/latest/download/SSH-Remote-Access-v0.2.0.zip
+
+Atau buka **[Releases](../../releases/latest)** → pada rilis terbaru, bagian **Assets** → unduh file:
 
 ```
 SSH-Remote-Access-vX.Y.Z.zip
 ```
+
+Hanya rilis **terbaru** yang dipakai (rilis lama `v0.1.0` sudah dihapus karena zip-nya tidak berisi binary). Alamat unduhan permanen di `update.json` selalu menunjuk rilis terbaru.
 
 > ❌ **JANGAN** unduh `Source code (zip)` / `Source code (tar.gz)`.
 > Itu isi repo (ada folder `module/`, tanpa binary `dropbear`), bukan paket modul.
@@ -373,6 +377,15 @@ ssh-keygen -R "[100.73.20.92]:2222"
 
 ## Troubleshooting
 
+### Sudah terpasang v0.1.0 (zip tanpa binary) — cara memperbaiki
+
+Kalau di log muncul `dropbear tidak ada`, kamu memakai zip lama. Perbaiki:
+
+1. Hapus modul lama di **KernelSU Next → Modules → SSH Remote Access → Remove** (data di `/data/adb/sshvpn` ikut terhapus lewat `uninstall.sh`).
+2. Unduh zip baru: https://github.com/Ryhandd/SSH-Remote-Access/releases/latest/download/SSH-Remote-Access-v0.2.0.zip
+3. Flash → reboot.
+4. `su -c 'sh /data/adb/modules/sshvpn/sshvpn.sh status'` → harus `bins=ok`.
+
 | Gejala | Penyebab | Solusi |
 |---|---|---|
 | `Identity file ... not accessible` | sintaks PowerShell dipakai di CMD | pakai `%USERPROFILE%` di CMD |
@@ -381,7 +394,7 @@ ssh-keygen -R "[100.73.20.92]:2222"
 | `Permission denied (publickey)` | public key belum cocok | `keys-get` di HP vs isi `hp_key.pub` di laptop |
 | `Host key verification failed` | host key HP berubah | `ssh-keygen -R "[ip]:2222"` lalu ssh lagi |
 | `subsystem request failed` / sftp error | scp tanpa `-O` | tambahkan `-O` |
-| Log penuh `dropbear tidak ada` | zip salah (Source code) | unduh `SSH-Remote-Access-vX.Y.Z.zip` dari Releases |
+| Log penuh `dropbear tidak ada` | zip salah (Source code) | unduh zip dari Releases seperti di atas, flash ulang |
 | `running=0`, `reason=menunggu interface VPN` | nama iface salah | `conf-set IFACES "<nama>"` lalu restart |
 | SSH jalan tapi putus saat layar mati | Android mematikan app VPN | matikan optimasi baterai untuk app VPN, aktifkan always-on VPN |
 
