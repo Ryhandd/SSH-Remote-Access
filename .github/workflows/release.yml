@@ -41,7 +41,18 @@ jobs:
         run: bash scripts/test-status.sh
 
       - name: Build dropbear (arm64)
-        run: bash scripts/build-dropbear.sh
+        run: |
+          set +e
+          bash scripts/build-dropbear.sh > /tmp/build.log 2>&1
+          rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "build gagal (rc=$rc), 20 baris terakhir:"
+            tail -n 20 /tmp/build.log
+            tail -n 12 /tmp/build.log | sed 's/^/::error::/'
+            exit "$rc"
+          fi
+          grep -E '^(==|ERROR)' /tmp/build.log || true
+          file module/dropbear module/dropbearkey module/scp
 
       - name: Package
         run: bash scripts/package.sh "${{ steps.v.outputs.tag }}" "${{ steps.v.outputs.code }}" "$GITHUB_REPOSITORY"

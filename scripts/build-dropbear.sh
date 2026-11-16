@@ -14,6 +14,8 @@ API="${ANDROID_API:-26}"
 NDK_ZIP_URL="${NDK_ZIP_URL:-https://dl.google.com/android/repository/android-ndk-r27c-linux.zip}"
 
 WORK="$(mktemp -d)"
+LOGDIR="${BUILD_LOG_DIR:-$WORK/logs}"
+mkdir -p "$LOGDIR"
 trap 'rm -rf "$WORK"' EXIT
 
 # ---------- 1. cari NDK ----------
@@ -87,17 +89,17 @@ if ! ./configure --host=aarch64-linux-android \
       --disable-zlib \
       --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx \
       --disable-lastlog --disable-loginfunc --disable-pututline --disable-pututxline \
-      > "$WORK/configure.log" 2>&1; then
+      > "$LOGDIR/configure.log" 2>&1; then
   echo "ERROR: configure gagal. 40 baris terakhir:" >&2
-  tail -n 40 "$WORK/configure.log" >&2
+  tail -n 40 "$LOGDIR/configure.log" >&2
   exit 1
 fi
 
 # ---------- 4. build ----------
 echo "== build =="
-if ! make -j"$(nproc 2>/dev/null || echo 2)" PROGRAMS="dropbear dropbearkey scp" > "$WORK/make.log" 2>&1; then
+if ! make -j"$(nproc 2>/dev/null || echo 2)" PROGRAMS="dropbear dropbearkey scp" > "$LOGDIR/make.log" 2>&1; then
   echo "ERROR: make gagal. 60 baris terakhir:" >&2
-  tail -n 60 "$WORK/make.log" >&2
+  tail -n 60 "$LOGDIR/make.log" >&2
   exit 1
 fi
 
