@@ -74,6 +74,16 @@ tar -xjf "$WORK/db.tar.bz2" -C "$WORK"
 cd "$WORK/dropbear-${VER}"
 
 cat > localoptions.h <<'EOF'
+/* Android bionic tidak menyediakan crypt(); modul ini key-only. */
+#undef DROPBEAR_SVR_PASSWORD_AUTH
+#define DROPBEAR_SVR_PASSWORD_AUTH 0
+#undef DROPBEAR_CLI_PASSWORD_AUTH
+#define DROPBEAR_CLI_PASSWORD_AUTH 0
+#undef DROPBEAR_SVR_PAM_AUTH
+#define DROPBEAR_SVR_PAM_AUTH 0
+#undef DROPBEAR_USE_PASSWORD_ENV
+#define DROPBEAR_USE_PASSWORD_ENV 0
+
 #undef DEFAULT_PATH
 #define DEFAULT_PATH "/system/bin:/system/xbin:/vendor/bin:/product/bin:/data/adb/modules/sshvpn:/data/adb/magisk:/data/adb/ksu/bin:/data/adb/ap/bin"
 EOF
