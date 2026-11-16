@@ -1,6 +1,6 @@
 {
-  "version": "v0.1.0",
-  "versionCode": 1,
-  "zipUrl": "https://github.com/Ryhandd/SSH-Remote-Access/releases/download/v0.1.0/SSH-Remote-Access-v0.1.0.zip",
+  "version": "v0.2.0",
+  "versionCode": 6,
+  "zipUrl": "https://github.com/Ryhandd/SSH-Remote-Access/releases/download/v0.2.0/SSH-Remote-Access-v0.2.0.zip",
   "changelog": "https://raw.githubusercontent.com/Ryhandd/SSH-Remote-Access/main/CHANGELOG.md"
 }
