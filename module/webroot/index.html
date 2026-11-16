@@ -44,11 +44,13 @@ pre{margin:0;max-height:240px;overflow:auto;font-size:.75rem;line-height:1.45;wh
 
   <section class="card">
     <h2>Status</h2>
+    <p id="s-reason" class="hint" style="margin-bottom:12px">-</p>
     <dl>
       <dt>Port</dt><dd id="s-port">-</dd>
       <dt>Bind</dt><dd id="s-bound">-</dd>
       <dt>Interface</dt><dd id="s-up">-</dd>
       <dt>Public key</dt><dd id="s-keys">-</dd>
+      <dt>Binary</dt><dd id="s-bins">-</dd>
       <dt>Host key</dt><dd id="s-fp">-</dd>
     </dl>
     <div class="row" style="margin-top:14px">
@@ -115,6 +117,10 @@ async function refresh(){
   $("s-bound").textContent=s.bound||"-";
   $("s-up").textContent=s.up||"tidak ada yang aktif";
   $("s-keys").textContent=(s.keys||"0")+" key";
+  $("s-bins").textContent=s.bins||"-";
+  const rs=$("s-reason");
+  rs.textContent=s.reason||"-";
+  rs.style.color=(s.bins&&s.bins!=="ok")||s.reason!=="berjalan"&&s.reason!=="siap start (jalankan: sshvpn.sh restart)"?"var(--warn,#c98a00)":"";
   $("s-fp").textContent=s.fp||"belum dibuat (muncul saat pertama start)";
   let ip="<ip-vpn>";
   if(s.bound&&s.bound!=="all")ip=s.bound.split(/\s+/)[0];

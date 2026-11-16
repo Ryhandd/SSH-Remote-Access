@@ -2,13 +2,14 @@ name: release
 
 on:
   push:
+    branches: ["main"]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
       dropbear_version:
         description: "Versi dropbear (tanpa prefix)"
         required: false
-        default: "2025.88"
+        default: "2026.94"
 
 permissions:
   contents: write
@@ -17,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DROPBEAR_VERSION: ${{ inputs.dropbear_version || '2025.88' }}
+      DROPBEAR_VERSION: ${{ inputs.dropbear_version || '2026.94' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,11 +37,25 @@ jobs:
           sed -n '/<script>/,/<\/script>/p' module/webroot/index.html | sed '1d;$d' > /tmp/ui.js
           node --check /tmp/ui.js
 
+      - name: Test status logic
+        run: bash scripts/test-status.sh
+
       - name: Build dropbear (arm64)
         run: bash scripts/build-dropbear.sh
 
       - name: Package
         run: bash scripts/package.sh "${{ steps.v.outputs.tag }}" "${{ steps.v.outputs.code }}" "$GITHUB_REPOSITORY"
+
+      - name: Verify zip berisi binary
+        run: |
+          ZIP=$(ls dist/*.zip)
+          echo "== isi $ZIP =="
+          unzip -Z1 "$ZIP"
+          for b in dropbear dropbearkey scp module.prop; do
+            unzip -Z1 "$ZIP" | grep -qx "$b" || { echo "GAGAL: $b tidak ada di zip"; exit 1; }
+          done
+          unzip -p "$ZIP" dropbear | head -c 4 | xxd | grep -q '7f45 4c46' || { echo "GAGAL: dropbear bukan ELF"; exit 1; }
+          echo "OK: zip lengkap"
 
       - uses: actions/upload-artifact@v4
         if: github.ref_type != 'tag'
@@ -54,6 +69,10 @@ jobs:
         with:
           files: dist/*.zip
           body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+          make_latest: true
+          fail_on_unmatched_files: true
 
       - name: Update update.json
         if: github.ref_type == 'tag'

@@ -11,14 +11,15 @@ trap 'rm -rf "$STAGE"' EXIT
 
 NEED="module.prop customize.sh service.sh action.sh uninstall.sh sshvpn.sh sshvpn.conf webroot/index.html"
 SUFFIX=""
-if [ "${ALLOW_NO_BIN:-0}" = 1 ]; then
-  SUFFIX="-nobin"
-else
-  NEED="$NEED dropbear dropbearkey scp"
-  for b in dropbear dropbearkey scp; do
-    [ -f "$ROOT/module/$b" ] || { echo "module/$b belum ada, jalankan build-dropbear.sh" >&2; exit 1; }
-  done
-fi
+NEED="$NEED dropbear dropbearkey scp"
+for b in dropbear dropbearkey scp; do
+  [ -f "$ROOT/module/$b" ] || {
+    echo "ERROR: module/$b belum ada." >&2
+    echo "Jalankan dulu: bash scripts/build-dropbear.sh (butuh Android NDK)." >&2
+    echo "Zip rilis WAJIB berisi binary, kalau tidak SSH tidak jalan." >&2
+    exit 1
+  }
+done
 
 cp -a "$ROOT/module/." "$STAGE/"
 rm -f "$STAGE/.gitkeep"

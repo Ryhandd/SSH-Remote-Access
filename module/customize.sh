@@ -12,12 +12,23 @@ ui_print "- Web    : rayhand.vercel.app"
 A="${ARCH:-$(getprop ro.product.cpu.abi)}"
 case "$A" in
   arm64*) ;;
-  *) abort "! Hanya arm64 (terdeteksi: $A)" ;;
+  *) abort "! Hanya arm64 (terdeteksi: $A)" ;; 
 esac
 
-if [ ! -f "$MODPATH/dropbear" ]; then
-  ui_print "! PERINGATAN: binary dropbear tidak ada di zip ini."
-  ui_print "! Pakai zip dari GitHub Releases agar SSH berfungsi."
+MISSING=""
+for b in dropbear dropbearkey scp; do
+  [ -f "$MODPATH/$b" ] || MISSING="$MISSING $b"
+done
+
+if [ -n "$MISSING" ]; then
+  ui_print "! PERINGATAN: binary tidak ada:${MISSING}"
+  ui_print "! Zip ini tidak lengkap, SSH TIDAK akan berfungsi."
+  ui_print "! Unduh zip rilis dari GitHub Releases -> Assets:"
+  ui_print "!   SSH-Remote-Access-<tag>.zip"
+  ui_print "! JANGAN pakai Source code (zip)."
+  mkdir -p "$MODPATH"
+  : > "$MODPATH/disable"
+  ui_print "! Modul dinonaktifkan otomatis sampai zip rilis yang benar dipasang."
 fi
 
 D=/data/adb/sshvpn
@@ -38,6 +49,12 @@ set_perm_recursive "$MODPATH" 0 0 0755 0644
 for s in sshvpn.sh service.sh action.sh uninstall.sh dropbear dropbearkey scp; do
   [ -f "$MODPATH/$s" ] && set_perm "$MODPATH/$s" 0 0 0755
 done
+
+if [ -n "$MISSING" ]; then
+  ui_print "- Modul NONAKTIF. Pasang ulang dengan zip Releases yang benar."
+  ui_print "- Selesai. Reboot untuk mengaktifkan ulang modul."
+  exit 0
+fi
 
 ui_print "- Pasang app Tailscale atau WireGuard, lalu connect."
 ui_print "- Taruh public key di /sdcard/sshvpn_authorized_keys (atau isi via WebUI) lalu reboot."

@@ -102,10 +102,10 @@ stop_proc() {
 start_proc() {
   sz=$(stat -c %s "$LOG" 2>/dev/null || echo 0)
   [ "$sz" -gt 262144 ] && : > "$LOG"
-  [ -x "$BIN/dropbear" ] || { log "dropbear tidak ada"; return 1; }
-  [ -s "$KEYS" ] || { log "authorized_keys kosong, tidak start"; return 2; }
+  [ -x "$BIN/dropbear" ] || { log "dropbear tidak ada ($BIN/dropbear) - pasang zip dari GitHub Releases"; LASTERR="dropbear tidak ada"; return 1; }
+  [ -s "$KEYS" ] || { log "authorized_keys kosong, tidak start"; LASTERR="authorized_keys kosong"; return 2; }
   want=$(want_addrs)
-  [ -n "$want" ] || return 3
+  [ -n "$want" ] || { LASTERR="interface VPN belum aktif"; return 3; }
   chmod 600 "$KEYS"
   [ -f "$HOSTKEY" ] || "$BIN/dropbearkey" -t ed25519 -f "$HOSTKEY" >>"$LOG" 2>&1
   chmod 600 "$HOSTKEY"
@@ -121,7 +121,7 @@ start_proc() {
   echo $! > "$PIDF"
   echo "$want" > "$BOUND"
   sleep 1
-  if running; then log "start ok: $want port $PORT"; else log "start gagal"; rm -f "$PIDF" "$BOUND"; return 4; fi
+  if running; then log "start ok: $want port $PORT"; else log "start gagal"; rm -f "$PIDF" "$BOUND"; LASTERR="dropbear gagal start, cek log"; return 4; fi
 }
 
 supervise() {
@@ -148,6 +148,12 @@ fingerprint() {
 }
 
 status() {
+  miss=""
+  for b in dropbear dropbearkey; do
+    [ -x "$BIN/$b" ] || miss="$miss $b"
+  done
+  if [ -n "$miss" ]; then bins="hilang:${miss# }"; else bins="ok"; fi
+  [ -x "$BIN/scp" ] || bins="$bins (scp tidak ada, kirim file pakai ssh cat)"
   if running; then echo "running=1"; echo "pid=$(cat "$PIDF")"; else echo "running=0"; fi
   echo "stopped=$([ -f "$STOPPED" ] && echo 1 || echo 0)"
   echo "sup=$(alive_sup && echo 1 || echo 0)"
@@ -166,6 +172,15 @@ status() {
   n=$(grep -cE '^[^#[:space:]]' "$KEYS" 2>/dev/null)
   echo "keys=${n:-0}"
   echo "fp=$(fingerprint)"
+  echo "bins=$bins"
+  if running; then reason="berjalan"
+  elif [ -n "$miss" ]; then reason="binary tidak lengkap:${miss# } - pasang zip dari GitHub Releases"
+  elif [ -f "$STOPPED" ]; then reason="dihentikan manual"
+  elif [ "${n:-0}" -eq 0 ]; then reason="authorized_keys kosong - isi public key di WebUI"
+  elif [ -z "$(want_addrs)" ]; then reason="menunggu interface VPN ($IFACES) aktif"
+  else reason="siap start (jalankan: sshvpn.sh restart)"
+  fi
+  echo "reason=$reason"
 }
 
 bad() { echo "invalid: $1"; exit 1; }
